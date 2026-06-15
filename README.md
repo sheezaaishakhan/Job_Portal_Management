@@ -119,16 +119,6 @@ define('DB_NAME', 'job_portal_db');  // Database name
 2. Browse available jobs
 3. Register as candidate and apply for jobs
 
-## Project Status
-✅ Complete backend structure created
-✅ Database schema with all tables
-✅ Admin panel APIs
-✅ Job seeker portal APIs
-✅ Authentication system
-✅ Job management system
-✅ Application tracking system
-✅ Dashboard statistics
-
 ## Features Implemented
 - **Admin Panel**
   - User authentication
@@ -149,35 +139,3 @@ define('DB_NAME', 'job_portal_db');  // Database name
 - Allowed formats: PDF, DOC, DOCX
 - Ensure `uploads/` folder exists and has write permissions
 
-## Security Notes
-1. Use HTTPS in production
-2. Implement input validation on frontend
-3. Use prepared statements for sensitive operations
-4. Hash passwords properly before storing
-5. Implement rate limiting for login attempts
-
-## Troubleshooting
-
-### Database Connection Error
-- Check MySQL is running
-- Verify database name matches `DB_NAME` in config.php
-- Ensure user credentials are correct
-
-### API Not Responding
-- Check Apache is running
-- Verify file paths are correct
-- Check browser console for errors
-
-### File Upload Issues
-- Create `uploads/resumes/` directory manually
-- Set folder permissions to 755
-- Check file size limits in php.ini
-
-## Next Steps
-1. Connect frontend HTML files with backend APIs
-2. Implement JWT tokens for better security
-3. Add email notifications
-4. Implement pagination for better performance
-5. Add role-based access control
-6. Add more validation rules
-7. Implement file compression for uploads

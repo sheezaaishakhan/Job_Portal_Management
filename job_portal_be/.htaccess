@@ -1,0 +1,15 @@
+# Enable Rewrite Engine
+RewriteEngine On
+RewriteBase /job_portal_be/
+
+# Remove .php extension from URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-zA-Z0-9/_-]+)/?$ $1.php [QSA,L]
+
+# Handle 404 errors
+ErrorDocument 404 /job_portal_be/404.php
+
+# Set proper MIME types
+AddType application/json .json
+AddType application/javascript .js

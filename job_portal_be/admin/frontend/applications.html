@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Applications</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand">Admin Panel</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="dashboard.html" class="list-group-item">Dashboard</a>
+                <a href="add-job.html" class="list-group-item">Add Job</a>
+                <a href="manage-job.html" class="list-group-item">Manage Jobs</a>
+                <a href="applications.html" class="list-group-item active">Applications</a>
+                <a href="login.html" class="list-group-item text-danger">Logout</a>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>Job Applications</h3>
+                <button id="refreshButton" class="btn btn-secondary btn-sm">Refresh</button>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Job</th>
+                                <th>Candidate</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Applied</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsBody">
+                            <tr><td colspan="8" class="text-center">Loading applications...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function safeFetch(url, options) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        throw new Error('Expected JSON but got: ' + text);
+    }
+}
+
+function apiOrigin() {
+    return window.location.protocol + '//' + window.location.host;
+}
+
+function backendPath(action) {
+    const path = window.location.pathname.replace(/\/admin\/frontend\/.*$/,'/admin/backend/applications.php?action=' + action);
+    return apiOrigin() + path;
+}
+
+async function loadApplications() {
+    try {
+        const url = backendPath('list');
+        const result = await safeFetch(url);
+        const tbody = document.getElementById('applicationsBody');
+        tbody.innerHTML = '';
+        if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No applications found</td></tr>';
+            return;
+        }
+
+        result.data.forEach(app => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${app.id}</td>
+                <td>${app.job_title}</td>
+                <td>${app.name}</td>
+                <td>${app.email}</td>
+                <td>${app.phone}</td>
+                <td>
+                    <select class="form-select form-select-sm" id="status-${app.id}">
+                        <option${app.status==='Pending' ? ' selected':''}>Pending</option>
+                        <option${app.status==='Reviewed' ? ' selected':''}>Reviewed</option>
+                        <option${app.status==='Shortlisted' ? ' selected':''}>Shortlisted</option>
+                        <option${app.status==='Rejected' ? ' selected':''}>Rejected</option>
+                        <option${app.status==='Accepted' ? ' selected':''}>Accepted</option>
+                    </select>
+                </td>
+                <td>${app.applied_date}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="updateStatus(${app.id})">Save</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error('Error loading applications:', err);
+        document.getElementById('applicationsBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading applications</td></tr>';
+    }
+}
+
+async function updateStatus(applicationId) {
+    const status = document.getElementById('status-' + applicationId).value;
+    const url = backendPath('update_status');
+    const form = new FormData();
+    form.append('application_id', applicationId);
+    form.append('status', status);
+
+    try {
+        const result = await safeFetch(url, { method: 'POST', body: form });
+        if (result.success) {
+            alert('Status updated');
+            loadApplications();
+        } else {
+            alert('Update failed: ' + result.message);
+        }
+    } catch (err) {
+        console.error('Error updating status:', err);
+        alert('Error: ' + err.message);
+    }
+}
+
+document.getElementById('refreshButton').addEventListener('click', loadApplications);
+loadApplications();
+</script>
+
+</body>
+</html>

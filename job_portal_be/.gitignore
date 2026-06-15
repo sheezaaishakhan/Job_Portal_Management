@@ -1,0 +1,24 @@
+# PHP Configuration files
+config.php
+
+# Uploads
+/uploads/
+/uploads/*
+
+# XAMPP logs
+/logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sql
+
+# Session files
+/sessions/

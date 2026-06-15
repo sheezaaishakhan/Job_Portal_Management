@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>My Applications</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">Job Portal</a>
+    <div>
+      <a class="nav-link text-white d-inline me-3" href="index.html">Home</a>
+      <a class="nav-link text-white d-inline me-3" href="jobs.html">Jobs</a>
+      <a class="nav-link text-white d-inline active" href="candidate-status.html">My Applications</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Check Your Application Status</h4>
+                </div>
+                <div class="card-body">
+                    <p>Enter the email you used when applying to see your job applications and current status.</p>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input id="emailInput" type="email" class="form-control" placeholder="your.email@example.com" required>
+                    </div>
+                    <button id="checkButton" class="btn btn-primary">Show My Applications</button>
+                    <small id="statusHelp" class="form-text text-muted d-block mt-2">If you applied with this email, your applications will appear below.</small>
+                </div>
+            </div>
+
+            <div id="applicationsCard" class="card d-none">
+                <div class="card-header">
+                    <h5>My Applications</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Job</th>
+                                <th>Status</th>
+                                <th>Applied</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="messageBox" class="alert d-none mt-3" role="alert"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function safeFetch(url, options) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        throw new Error('Expected JSON but got: ' + text);
+    }
+}
+
+function apiOrigin() {
+    return window.location.protocol + '//' + window.location.host;
+}
+
+function backendPath(action) {
+    const path = window.location.pathname.replace(/\/portal-client\/frontend\/.*$/,'/portal-client/backend/candidates.php?action=' + action);
+    return apiOrigin() + path;
+}
+
+function showMessage(text, type = 'info') {
+    const el = document.getElementById('messageBox');
+    el.textContent = text;
+    el.className = `alert alert-${type} mt-3`;
+    el.classList.remove('d-none');
+}
+
+async function loadApplications(candidateId) {
+    const url = backendPath('my_applications') + '&candidate_id=' + encodeURIComponent(candidateId);
+    const result = await safeFetch(url);
+    const body = document.getElementById('applicationsBody');
+    const card = document.getElementById('applicationsCard');
+
+    if (!result.success) {
+        showMessage(result.message || 'Unable to load applications', 'danger');
+        card.classList.add('d-none');
+        return;
+    }
+
+    const apps = result.data || [];
+    if (apps.length === 0) {
+        showMessage('No applications found for this email.', 'warning');
+        card.classList.add('d-none');
+        return;
+    }
+
+    body.innerHTML = '';
+    apps.forEach(app => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${app.job_title}</td>
+            <td>${app.status}</td>
+            <td>${app.applied_date}</td>
+        `;
+        body.appendChild(row);
+    });
+
+    card.classList.remove('d-none');
+    showMessage(`Found ${apps.length} application(s).`, 'success');
+}
+
+async function onCheck() {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) {
+        showMessage('Please enter your email.', 'warning');
+        return;
+    }
+
+    try {
+        const url = backendPath('get_by_email') + '&email=' + encodeURIComponent(email);
+        const result = await safeFetch(url);
+        if (!result.success) {
+            showMessage(result.message || 'Candidate not found', 'danger');
+            document.getElementById('applicationsCard').classList.add('d-none');
+            return;
+        }
+        await loadApplications(result.candidate.id);
+    } catch (err) {
+        console.error(err);
+        showMessage('Error loading status: ' + err.message, 'danger');
+        document.getElementById('applicationsCard').classList.add('d-none');
+    }
+}
+
+// Pre-fill email from query string if available
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    if (email) {
+        const input = document.getElementById('emailInput');
+        input.value = email;
+        onCheck();
+    }
+})();
+
+document.getElementById('checkButton').addEventListener('click', onCheck);
+</script>
+
+</body>
+</html>

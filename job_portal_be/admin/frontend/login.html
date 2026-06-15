@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<!-- LOGIN BOX -->
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+
+    <div class="card shadow" style="width: 350px;">
+
+        <div class="card-header bg-dark text-white text-center">
+            Admin Login
+        </div>
+
+        <div class="card-body">
+
+            <form id="loginForm">
+
+                <div class="mb-3">
+                    <label>Username</label>
+                    <input id="loginEmail" type="text" class="form-control" placeholder="Enter username">
+                </div>
+
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input id="loginPassword" type="password" class="form-control" placeholder="Enter password">
+                </div>
+
+               <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+        <div id="debug" style="display:none; white-space:pre-wrap; margin-top:1rem; border:1px solid #ddd; padding:0.75rem; background:#f8f9fa"></div>
+
+        <script>
+        async function safeFetch(url, options) {
+            const debugEl = document.getElementById('debug');
+            const res = await fetch(url, options);
+            const ct = res.headers.get('content-type') || '';
+            const status = res.status;
+            const text = await res.text();
+            const preview = text.slice(0,2000);
+            const logObj = { status, contentType: ct, bodyPreview: preview };
+            console.log('safeFetch ->', url, logObj);
+            if (debugEl) {
+                debugEl.style.display = 'block';
+                debugEl.textContent = 'safeFetch -> ' + url + '\n' + JSON.stringify(logObj, null, 2) + '\n\nFull body:\n' + text;
+            }
+            try {
+                return JSON.parse(text);
+            } catch (err) {
+                throw new Error('Expected JSON but got: ' + text);
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e){
+            e.preventDefault();
+            try {
+                const fd = new FormData();
+                fd.append('email', document.getElementById('loginEmail').value);
+                fd.append('password', document.getElementById('loginPassword').value);
+
+                // Build backend URL: use hostname without dev-server port (fixes Live Server :5500)
+                function apiOrigin() {
+                    const proto = window.location.protocol;
+                    const host = window.location.hostname; // drop port to reach Apache on default port
+                    return proto + '//' + host;
+                }
+                const path = window.location.pathname.replace(/\/admin\/frontend\/.*$/,'/admin/backend/login.php');
+                const loginUrl = apiOrigin() + path;
+                const data = await safeFetch(loginUrl, { method: 'POST', body: fd });
+                if (data.success) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error: ' + err.message);
+            }
+        });
+        </script>
+
+        </div>
+
+        <div class="card-footer text-center">
+            <small>Job Portal Admin Panel</small>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Jobs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand">Manage Jobs</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="dashboard.html" class="list-group-item">Dashboard</a>
+                <a href="add-job.html" class="list-group-item">Add Job</a>
+                <a href="manage-job.html" class="list-group-item active">Manage Jobs</a>
+                <a href="applications.html" class="list-group-item">Applications</a>
+                <a href="login.html" class="list-group-item text-danger">Logout</a>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <h3 class="mb-3">All Posted Jobs</h3>
+
+            <table class="table table-bordered">
+
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Job Title</th>
+            <th>Company</th>
+            <th>Location</th>
+            <th>Salary</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody id="jobsTableBody">
+        <tr><td colspan="7" class="text-center">Loading jobs...</td></tr>
+    </tbody>
+
+</table>
+
+<script>
+async function safeFetch(url, options) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        throw new Error('Expected JSON but got: ' + text);
+    }
+}
+
+function apiOrigin() {
+    return window.location.protocol + '//' + window.location.host;
+}
+
+async function loadJobs() {
+    try {
+        const path = window.location.pathname.replace(/\/admin\/frontend\/.*$/,'/admin/backend/jobs.php?action=list');
+        const jobsUrl = apiOrigin() + path;
+        const data = await safeFetch(jobsUrl);
+        const tbody = document.getElementById('jobsTableBody');
+        tbody.innerHTML = '';
+        if (!Array.isArray(data.data) || data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No jobs found</td></tr>';
+            return;
+        }
+        data.data.forEach(job => {
+            const row = document.createElement('tr');
+            const salary = job.salary_min && job.salary_max ? `${job.salary_min} - ${job.salary_max}` : 'N/A';
+            row.innerHTML = `
+                <td>${job.id}</td>
+                <td>${job.title}</td>
+                <td>${job.company_name}</td>
+                <td>${job.location || 'N/A'}</td>
+                <td>${salary}</td>
+                <td><span class="badge bg-${job.status === 'Active' ? 'success' : 'warning'}">${job.status || 'Active'}</span></td>
+                <td>
+                    <button class="btn btn-warning btn-sm me-1" onclick="editJob(${job.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteJob(${job.id})">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error('Error loading jobs:', err);
+        document.getElementById('jobsTableBody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading jobs</td></tr>';
+    }
+}
+
+async function editJob(jobId) {
+    const title = prompt('Enter new job title:');
+    if (!title) return;
+
+    const path = window.location.pathname.replace(/\/admin\/frontend\/.*$/,'/admin/backend/jobs.php?action=edit');
+    const url = apiOrigin() + path;
+    const fd = new FormData();
+    fd.append('job_id', jobId);
+    fd.append('title', title);
+
+    try {
+        const result = await safeFetch(url, { method: 'POST', body: fd });
+        if (result.success) {
+            alert('Job updated successfully');
+            loadJobs();
+        } else {
+            alert('Update failed: ' + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+    }
+}
+
+async function deleteJob(jobId) {
+    if (!confirm('Are you sure you want to delete this job?')) return;
+
+    const path = window.location.pathname.replace(/\/admin\/frontend\/.*$/,'/admin/backend/jobs.php?action=delete');
+    const url = apiOrigin() + path;
+    const fd = new FormData();
+    fd.append('job_id', jobId);
+
+    try {
+        const result = await safeFetch(url, { method: 'POST', body: fd });
+        if (result.success) {
+            alert('Job deleted successfully');
+            loadJobs();
+        } else {
+            alert('Delete failed: ' + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+    }
+}
+
+loadJobs();
+</script>
+
+</div>
+
+</body>
+</html>

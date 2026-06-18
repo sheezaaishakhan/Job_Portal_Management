@@ -78,6 +78,26 @@ const jobIdFromUrl = params.get('job_id') || '';
 document.getElementById('applyForm').addEventListener('submit', async function(e){
     e.preventDefault();
     try {
+        const name = document.getElementById('candidateName').value.trim();
+        const email = document.getElementById('candidateEmail').value.trim();
+
+        if (!name) {
+            alert('Name is required');
+            return;
+        }
+
+        const namePattern = /^[A-Za-z\u00C0-\u024F\s'\-]+$/;
+        if (!namePattern.test(name)) {
+            alert('Please enter a valid name without @ or other special characters');
+            return;
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailPattern.test(email)) {
+            alert('Please enter a valid email');
+            return;
+        }
+
         // Get job_id from URL or form hidden field
         const jobId = jobIdFromUrl || document.getElementById('applyJobId')?.value;
         if (!jobId) {
@@ -87,8 +107,8 @@ document.getElementById('applyForm').addEventListener('submit', async function(e
 
         // Step 1: Register candidate or get existing candidate_id
         const registerFd = new FormData();
-        registerFd.append('name', document.getElementById('candidateName').value);
-        registerFd.append('email', document.getElementById('candidateEmail').value);
+        registerFd.append('name', name);
+        registerFd.append('email', email);
         registerFd.append('phone', document.getElementById('candidatePhone').value);
         registerFd.append('city', document.getElementById('candidateCity').value || '');
         registerFd.append('education', document.getElementById('candidateEducation').value || '');
